@@ -1,28 +1,9 @@
-
-
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Page configuration
-st.set_page_config(layout="wide")
-
 # Title of the app
 st.title("CSV Data Visualization App")
-
-# Add description
-st.write("Compare up to 4 data columns in a bar chart")
-
-# Custom CSS to make the app wider
-st.markdown("""
-    <style>
-    .reportview-container .main .block-container {
-        max-width: 1200px;
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-    }
-    </style>
-    """, unsafe_allow_html=True)
 
 # File uploader for CSV
 uploaded_file = st.file_uploader("AQI_datv2", type=["csv"])
@@ -36,7 +17,7 @@ if uploaded_file is not None:
     # Dropdown for selecting columns
     columns = data.columns.tolist()
     x_column = st.selectbox("Select X-axis column", columns)
-    y_column = st.selectbox("Select Y-axis column", columns)
+    y_columns = st.multiselect("Select Y-axis columns", columns)
 
     # Dropdown for graph type
     graph_type = st.selectbox(
@@ -57,8 +38,10 @@ if uploaded_file is not None:
             ax.set_title(f"{y_column} vs {x_column} (Scatter Plot)")
 
         elif graph_type == "Bar":
-            ax.bar(data[x_column], data[y_column])
-            ax.set_title(f"{y_column} vs {x_column} (Bar Chart)")
+            for y_column in y_columns:
+                ax.bar(data[x_column], data[y_column], label=y_column)
+            ax.set_title(f"{' & '.join(y_columns)} vs {x_column} (Bar Chart)")
+            ax.legend()
 
         elif graph_type == "Pie":
             # Pie chart only makes sense for single-column data
