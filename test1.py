@@ -44,26 +44,22 @@ if uploaded_file is not None:
         elif graph_type == "Pie":
             # Pie chart only makes sense for single-column data
             if len(data[x_column].unique()) <= 10:  # Limit to 10 unique categories for readability
-                plt.pie(
+                fig, ax = plt.subplots()
+                ax.pie(
                     data[y_column],
                     labels=data[x_column],
                     autopct='%1.1f%%',
                     startangle=90,
                 )
-                plt.title(f"{y_column} (Pie Chart)")
+                ax.set_title(f"{y_column} (Pie Chart)")
             else:
                 st.error("Pie chart requires fewer unique categories in the X-axis.")
 
         if graph_type != "Pie":
             ax.set_xlabel(x_column)
             ax.set_ylabel(y_column)
-            st.pyplot(fig)
-        else:
-            st.pyplot(plt)
-
-    st.write("Tip: Ensure the selected columns are numeric for meaningful plots.")
-else:
-    st.info("Please upload a CSV file to get started.") 
+        
+        st.pyplot(fig)
 
     st.write("Tip: Ensure the selected columns are numeric for meaningful plots.")
 else:
