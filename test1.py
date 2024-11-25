@@ -14,10 +14,10 @@ if uploaded_file is not None:
     st.write("### Data Preview")
     st.dataframe(data)
 
-    # Get total number of rows and columns
+    # Get total number of rows
     total_rows, total_columns = data.shape
 
-    # Inputs for start and end rows
+    # Option 1: Row range selection
     st.write("### Select Row Range for Analysis")
     start_row = st.number_input(
         "Start Row (0-indexed)", min_value=0, max_value=total_rows - 1, value=0, step=1
@@ -25,23 +25,32 @@ if uploaded_file is not None:
     end_row = st.number_input(
         "End Row (0-indexed, inclusive)", min_value=start_row, max_value=total_rows - 1, value=total_rows - 1, step=1
     )
+    range_selected_data = data.iloc[start_row : end_row + 1]
 
-    # Filter the data for the selected row range
-    filtered_data = data.iloc[start_row : end_row + 1]
-    st.write("### Filtered Data Preview (Rows)")
+    # Option 2: Specific row selection
+    st.write("### Or Select Specific Rows for Analysis")
+    row_indices = st.multiselect(
+        "Select Specific Rows (By Index)",
+        options=list(range(total_rows)),
+        default=list(range(start_row, end_row + 1))
+    )
+    specific_rows_data = data.iloc[row_indices]
+
+    # Final filtered data for graphing
+    st.write("### Filtered Data Preview")
+    filtered_data = specific_rows_data
     st.dataframe(filtered_data)
 
-    # Multiselect for column filtering
+    # Column selection
     st.write("### Select Columns for Analysis")
     selected_columns = st.multiselect(
         "Select Columns",
         options=data.columns.tolist(),
         default=data.columns.tolist()  # Default to all columns
     )
-
-    # Filter the data for selected columns
     filtered_data = filtered_data[selected_columns]
-    st.write("### Filtered Data Preview (Rows & Columns)")
+
+    st.write("### Final Filtered Data Preview (Rows & Columns)")
     st.dataframe(filtered_data)
 
     # Dropdown for selecting columns for plotting
