@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Title of the app
-st.title("Flexible Data Selection App")
+st.title("CSV Data Visualization App")
 
 # File uploader for CSV
 uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
@@ -14,65 +14,91 @@ if uploaded_file is not None:
     st.write("### Data Preview")
     st.dataframe(data)
 
+    # Get total number of rows
     total_rows, total_columns = data.shape
 
-    # Initialize variables to store selected data
-    x_data = None
-    y_data = None
+    # Option 1: Row range selection
+    st.write("### Select Row Range for Analysis")
+    start_row = st.number_input(
+        "Start Row (0-indexed)", min_value=0, max_value=total_rows - 1, value=0, step=1
+    )
+    end_row = st.number_input(
+        "End Row (0-indexed, inclusive)", min_value=start_row, max_value=total_rows - 1, value=total_rows - 1, step=1
+    )
+    range_selected_data = data.iloc[start_row : end_row + 1]
 
-    # Checkbox and dropdown for X-axis row
-    use_x_row = st.checkbox("Select X-axis row")
-    x_row = None
-    if use_x_row:
-        x_row = st.selectbox("Select X-axis row", options=data.index)
+    # Option 2: Specific row selection
+    st.write("### Or Select Specific Rows for Analysis")
+    row_indices = st.multiselect(
+        "Select Specific Rows (By Index)",
+        options=list(range(total_rows)),
+        default=list(range(start_row, end_row + 1))
+    )
+    specific_rows_data = data.iloc[row_indices]
 
-    # Checkbox and dropdown for X-axis column
-    use_x_column = st.checkbox("Select X-axis column")
-    x_column = None
-    if use_x_column:
-        x_column = st.selectbox("Select X-axis column", options=data.columns)
+    # Final filtered data for graphing
+    st.write("### Filtered Data Preview")
+    filtered_data = specific_rows_data
+    st.dataframe(filtered_data)
 
-    # Checkbox and dropdown for Y-axis row
-    use_y_row = st.checkbox("Select Y-axis row")
-    y_row = None
-    if use_y_row:
-        y_row = st.selectbox("Select Y-axis row", options=data.index)
+    # Column selection
+    st.write("### Select Columns for Analysis")
+    selected_columns = st.multiselect(
+        "Select Columns",
+        options=data.columns.tolist(),
+        default=data.columns.tolist()  # Default to all columns
+    )
+    filtered_data = filtered_data[selected_columns]
 
-    # Checkbox and dropdown for Y-axis column
-    use_y_column = st.checkbox("Select Y-axis column")
-    y_column = None
-    if use_y_column:
-        y_column = st.selectbox("Select Y-axis column", options=data.columns)
+    st.write("### Final Filtered Data Preview (Rows & Columns)")
+    st.dataframe(filtered_data)
 
-    # Ensure only one X and one Y selection is made
-    if sum([use_x_row, use_x_column]) != 1 or sum([use_y_row, use_y_column]) != 1:
-        st.error("Please select exactly one option for the X-axis and one option for the Y-axis.")
-    else:
-        # Extract X-axis data
-        if use_x_row:
-            x_data = data.iloc[x_row, :].values  # Entire row as X
-            x_label = f"Row {x_row}"
-        elif use_x_column:
-            x_data = data[x_column].values  # Entire column as X
-            x_label = f"Column '{x_column}'"
+    # Dropdown for selecting columns for plotting
+    x_column = st.selectbox("Select X-axis column", selected_columns)
+    y_column = st.selectbox("Select Y-axis column", selected_columns)
 
-        # Extract Y-axis data
-        if use_y_row:
-            y_data = data.iloc[y_row, :].values  # Entire row as Y
-            y_label = f"Row {y_row}"
-        elif use_y_column:
-            y_data = data[y_column].values  # Entire column as Y
-            y_label = f"Column '{y_column}'"
+    # Dropdown for graph type
+    graph_type = st.selectbox(
+        "Select Graph Type",
+        ["Line", "Scatter", "Bar", "Pie"]
+    )
 
-        # Plot the graph
-        if st.button("Plot Graph"):
-            fig, ax = plt.subplots()
-            ax.scatter(x_data, y_data, color='blue', label="Data Points")
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(y_label)
-            ax.set_title(f"Scatter Plot: {x_label} vs {y_label}")
-            ax.legend()
+    # Plot button
+    if st.button("Plot Graph"):
+        fig, ax = plt.subplots()
+
+        if graph_type == "Line":
+            ax.plot(filtered_data[x_column], filtered_data[y_column], marker='o')
+            ax.set_title(f"{y_column} vs {x_column} (Line Plot)")
+
+        elif graph_type == "Scatter":
+            ax.scatter(filtered_data[x_column], filtered_data[y_column])
+            ax.set_title(f"{y_column} vs {x_column} (Scatter Plot)")
+
+        elif graph_type == "Bar":
+            ax.bar(filtered_data[x_column], filtered_data[y_column])
+            ax.set_title(f"{y_column} vs {x_column} (Bar Chart)")
+
+        elif graph_type == "Pie":
+            # Pie chart only makes sense for single-column data
+            if len(filtered_data[x_column].unique()) <= 10:  # Limit to 10 unique categories for readability
+                plt.pie(
+                    filtered_data[y_column],
+                    labels=filtered_data[x_column],
+                    autopct='%1.1f%%',
+                    startangle=90,
+                )
+                plt.title(f"{y_column} (Pie Chart)")
+            else:
+                st.error("Pie chart requires fewer unique categories in the X-axis.")
+
+        if graph_type != "Pie":
+            ax.set_xlabel(x_column)
+            ax.set_ylabel(y_column)
             st.pyplot(fig)
+        else:
+            st.pyplot(plt)
 
+    st.write("Tip: Ensure the selected columns are numeric for meaningful plots.")
 else:
     st.info("Please upload a CSV file to get started.")
