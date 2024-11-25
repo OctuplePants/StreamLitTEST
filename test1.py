@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 st.title("CSV Data Visualization App")
 
 # File uploader for CSV
-uploaded_file = st.file_uploader("AQI_datv2", type=["csv"])
+uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
 
 if uploaded_file is not None:
     # Read the CSV file
@@ -14,8 +14,25 @@ if uploaded_file is not None:
     st.write("### Data Preview")
     st.dataframe(data)
 
+    # Get total number of rows
+    total_rows = len(data)
+
+    # Inputs for start and end rows
+    st.write("### Select Row Range for Analysis")
+    start_row = st.number_input(
+        "Start Row (0-indexed)", min_value=0, max_value=total_rows - 1, value=0, step=1
+    )
+    end_row = st.number_input(
+        "End Row (0-indexed, inclusive)", min_value=start_row, max_value=total_rows - 1, value=total_rows - 1, step=1
+    )
+
+    # Filter the data for the selected row range
+    filtered_data = data.iloc[start_row : end_row + 1]
+    st.write("### Filtered Data Preview")
+    st.dataframe(filtered_data)
+
     # Dropdown for selecting columns
-    columns = data.columns.tolist()
+    columns = filtered_data.columns.tolist()
     x_column = st.selectbox("Select X-axis column", columns)
     y_column = st.selectbox("Select Y-axis column", columns)
 
@@ -30,23 +47,23 @@ if uploaded_file is not None:
         fig, ax = plt.subplots()
 
         if graph_type == "Line":
-            ax.plot(data[x_column], data[y_column], marker='o')
+            ax.plot(filtered_data[x_column], filtered_data[y_column], marker='o')
             ax.set_title(f"{y_column} vs {x_column} (Line Plot)")
 
         elif graph_type == "Scatter":
-            ax.scatter(data[x_column], data[y_column])
+            ax.scatter(filtered_data[x_column], filtered_data[y_column])
             ax.set_title(f"{y_column} vs {x_column} (Scatter Plot)")
 
         elif graph_type == "Bar":
-            ax.bar(data[x_column], data[y_column])
+            ax.bar(filtered_data[x_column], filtered_data[y_column])
             ax.set_title(f"{y_column} vs {x_column} (Bar Chart)")
 
         elif graph_type == "Pie":
             # Pie chart only makes sense for single-column data
-            if len(data[x_column].unique()) <= 10:  # Limit to 10 unique categories for readability
+            if len(filtered_data[x_column].unique()) <= 10:  # Limit to 10 unique categories for readability
                 plt.pie(
-                    data[y_column],
-                    labels=data[x_column],
+                    filtered_data[y_column],
+                    labels=filtered_data[x_column],
                     autopct='%1.1f%%',
                     startangle=90,
                 )
@@ -63,4 +80,4 @@ if uploaded_file is not None:
 
     st.write("Tip: Ensure the selected columns are numeric for meaningful plots.")
 else:
-    st.info("Please upload a CSV file to get started.") 
+    st.info("Please upload a CSV file to get started.")
