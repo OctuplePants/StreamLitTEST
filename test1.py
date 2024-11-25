@@ -14,8 +14,8 @@ if uploaded_file is not None:
     st.write("### Data Preview")
     st.dataframe(data)
 
-    # Get total number of rows
-    total_rows = len(data)
+    # Get total number of rows and columns
+    total_rows, total_columns = data.shape
 
     # Inputs for start and end rows
     st.write("### Select Row Range for Analysis")
@@ -28,13 +28,25 @@ if uploaded_file is not None:
 
     # Filter the data for the selected row range
     filtered_data = data.iloc[start_row : end_row + 1]
-    st.write("### Filtered Data Preview")
+    st.write("### Filtered Data Preview (Rows)")
     st.dataframe(filtered_data)
 
-    # Dropdown for selecting columns
-    columns = filtered_data.columns.tolist()
-    x_column = st.selectbox("Select X-axis column", columns)
-    y_column = st.selectbox("Select Y-axis column", columns)
+    # Multiselect for column filtering
+    st.write("### Select Columns for Analysis")
+    selected_columns = st.multiselect(
+        "Select Columns",
+        options=data.columns.tolist(),
+        default=data.columns.tolist()  # Default to all columns
+    )
+
+    # Filter the data for selected columns
+    filtered_data = filtered_data[selected_columns]
+    st.write("### Filtered Data Preview (Rows & Columns)")
+    st.dataframe(filtered_data)
+
+    # Dropdown for selecting columns for plotting
+    x_column = st.selectbox("Select X-axis column", selected_columns)
+    y_column = st.selectbox("Select Y-axis column", selected_columns)
 
     # Dropdown for graph type
     graph_type = st.selectbox(
