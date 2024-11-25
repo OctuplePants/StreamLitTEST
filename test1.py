@@ -14,53 +14,50 @@ if uploaded_file is not None:
     st.write("### Data Preview")
     st.dataframe(data)
 
-    # Get total number of rows
+    # Get total number of rows and columns
     total_rows, total_columns = data.shape
 
-    # Option 1: Row range selection
-    st.write("### Select Row Range for Analysis")
+    # Row range selection
+    st.write("### Select Row Range for Filtering")
     start_row = st.number_input(
         "Start Row (0-indexed)", min_value=0, max_value=total_rows - 1, value=0, step=1
     )
     end_row = st.number_input(
         "End Row (0-indexed, inclusive)", min_value=start_row, max_value=total_rows - 1, value=total_rows - 1, step=1
     )
-    range_selected_data = data.iloc[start_row : end_row + 1]
+    range_filtered_data = data.iloc[start_row : end_row + 1]
 
-    # Option 2: Specific row selection
-    st.write("### Or Select Specific Rows for Analysis")
-    row_indices = st.multiselect(
-        "Select Specific Rows (By Index)",
-        options=list(range(total_rows)),
-        default=list(range(start_row, end_row + 1))
+    # Column range selection
+    st.write("### Select Column Range for Filtering")
+    start_col = st.number_input(
+        "Start Column (0-indexed)", min_value=0, max_value=total_columns - 1, value=0, step=1
     )
-    specific_rows_data = data.iloc[row_indices]
-
-    # Final filtered data for graphing
-    st.write("### Filtered Data Preview")
-    filtered_data = specific_rows_data
-    st.dataframe(filtered_data)
-
-    # Column selection
-    st.write("### Select Columns for Analysis")
-    selected_columns = st.multiselect(
-        "Select Columns",
-        options=data.columns.tolist(),
-        default=data.columns.tolist()  # Default to all columns
+    end_col = st.number_input(
+        "End Column (0-indexed, inclusive)", min_value=start_col, max_value=total_columns - 1, value=total_columns - 1, step=1
     )
-    filtered_data = filtered_data[selected_columns]
+    range_filtered_data = range_filtered_data.iloc[:, start_col : end_col + 1]
 
-    st.write("### Final Filtered Data Preview (Rows & Columns)")
-    st.dataframe(filtered_data)
+    st.write("### Filtered Data Preview (Rows & Columns)")
+    st.dataframe(range_filtered_data)
 
-    # Dropdown for selecting columns for plotting
-    x_column = st.selectbox("Select X-axis column", selected_columns)
-    y_column = st.selectbox("Select Y-axis column", selected_columns)
+    # Row selection for X and Y axes
+    st.write("### Select Specific Rows for X and Y Axes")
+    x_row = st.selectbox("Select X-axis row", options=range_filtered_data.index)
+    y_row = st.selectbox("Select Y-axis row", options=range_filtered_data.index)
+
+    # Column selection for X and Y axes
+    st.write("### Select Columns for X and Y Axes")
+    x_column = st.selectbox("Select X-axis column", options=range_filtered_data.columns)
+    y_column = st.selectbox("Select Y-axis column", options=range_filtered_data.columns)
+
+    # Prepare data for plotting
+    x_data = range_filtered_data.loc[x_row, x_column]
+    y_data = range_filtered_data.loc[y_row, y_column]
 
     # Dropdown for graph type
     graph_type = st.selectbox(
         "Select Graph Type",
-        ["Line", "Scatter", "Bar", "Pie"]
+        ["Line", "Scatter", "Bar"]
     )
 
     # Plot button
@@ -68,37 +65,22 @@ if uploaded_file is not None:
         fig, ax = plt.subplots()
 
         if graph_type == "Line":
-            ax.plot(filtered_data[x_column], filtered_data[y_column], marker='o')
-            ax.set_title(f"{y_column} vs {x_column} (Line Plot)")
+            ax.plot([x_data], [y_data], marker='o')
+            ax.set_title(f"Data Point: ({x_column}[{x_row}] vs {y_column}[{y_row}]) (Line Plot)")
 
         elif graph_type == "Scatter":
-            ax.scatter(filtered_data[x_column], filtered_data[y_column])
-            ax.set_title(f"{y_column} vs {x_column} (Scatter Plot)")
+            ax.scatter([x_data], [y_data])
+            ax.set_title(f"Data Point: ({x_column}[{x_row}] vs {y_column}[{y_row}]) (Scatter Plot)")
 
         elif graph_type == "Bar":
-            ax.bar(filtered_data[x_column], filtered_data[y_column])
-            ax.set_title(f"{y_column} vs {x_column} (Bar Chart)")
+            ax.bar([x_data], [y_data])
+            ax.set_title(f"Data Point: ({x_column}[{x_row}] vs {y_column}[{y_row}]) (Bar Chart)")
 
-        elif graph_type == "Pie":
-            # Pie chart only makes sense for single-column data
-            if len(filtered_data[x_column].unique()) <= 10:  # Limit to 10 unique categories for readability
-                plt.pie(
-                    filtered_data[y_column],
-                    labels=filtered_data[x_column],
-                    autopct='%1.1f%%',
-                    startangle=90,
-                )
-                plt.title(f"{y_column} (Pie Chart)")
-            else:
-                st.error("Pie chart requires fewer unique categories in the X-axis.")
+        ax.set_xlabel(f"{x_column}[Row: {x_row}]")
+        ax.set_ylabel(f"{y_column}[Row: {y_row}]")
+        st.pyplot(fig)
 
-        if graph_type != "Pie":
-            ax.set_xlabel(x_column)
-            ax.set_ylabel(y_column)
-            st.pyplot(fig)
-        else:
-            st.pyplot(plt)
-
-    st.write("Tip: Ensure the selected columns are numeric for meaningful plots.")
+    st.write("Tip: Ensure the selected data points are numeric for meaningful plots.")
 else:
     st.info("Please upload a CSV file to get started.")
+
