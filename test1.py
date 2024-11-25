@@ -17,7 +17,7 @@ if uploaded_file is not None:
     # Dropdown for selecting columns
     columns = data.columns.tolist()
     x_column = st.selectbox("Select X-axis column", columns)
-    y_columns = st.multiselect("Select Y-axis columns", columns)
+    y_column = st.selectbox("Select Y-axis column", columns)
 
     # Dropdown for graph type
     graph_type = st.selectbox(
@@ -38,10 +38,8 @@ if uploaded_file is not None:
             ax.set_title(f"{y_column} vs {x_column} (Scatter Plot)")
 
         elif graph_type == "Bar":
-            for y_column in y_columns:
-                ax.bar(data[x_column], data[y_column], label=y_column)
-            ax.set_title(f"{' & '.join(y_columns)} vs {x_column} (Bar Chart)")
-            ax.legend()
+            ax.bar(data[x_column], data[y_column])
+            ax.set_title(f"{y_column} vs {x_column} (Bar Chart)")
 
         elif graph_type == "Pie":
             # Pie chart only makes sense for single-column data
